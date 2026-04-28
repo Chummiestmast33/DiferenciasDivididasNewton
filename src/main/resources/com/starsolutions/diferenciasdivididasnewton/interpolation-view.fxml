@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane styleClass="root" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.starsolutions.diferenciasdivididasnewton.InterpolationController">
+    <top>
+        <VBox spacing="10" styleClass="header">
+            <padding>
+                <Insets bottom="15" left="15" right="15" top="15" />
+            </padding>
+            <Label styleClass="title" text="Interpolación por Diferencias Divididas de Newton" />
+            <Label styleClass="subtitle" text="Ingresa puntos de datos, calcula las diferencias divididas y evalúa el polinomio" />
+        </VBox>
+    </top>
+
+    <center>
+        <HBox spacing="15">
+            <padding>
+                <Insets bottom="15" left="15" right="15" top="15" />
+            </padding>
+
+            <!-- Panel izquierdo: Entrada de datos -->
+            <VBox prefWidth="350" spacing="10" styleClass="panel">
+                <Label styleClass="section-title" text="Datos de Entrada" />
+
+                <!-- Tabla de puntos -->
+                <Label styleClass="label-bold" text="Puntos (x, y):" />
+                <HBox spacing="5">
+                    <TextField prefWidth="80" promptText="x" fx:id="xPointField" />
+                    <TextField fx:id="yPointField" prefWidth="80" promptText="y" />
+                    <Button onAction="#onAddPoint" prefWidth="80" styleClass="btn-primary" text="Agregar" />
+                </HBox>
+
+                <TableView fx:id="dataTable" prefHeight="200" styleClass="data-table">
+                    <columns>
+                        <TableColumn prefWidth="80" text="x" fx:id="xColumn" />
+                        <TableColumn fx:id="yColumn" prefWidth="80" text="y" />
+                    </columns>
+                </TableView>
+
+                <HBox spacing="5">
+                    <Button onAction="#onRemovePoint" prefWidth="150" styleClass="btn-danger" text="Eliminar Seleccionado" />
+                    <Button onAction="#onClearData" prefWidth="150" styleClass="btn-warning" text="Limpiar Todo" />
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="5">
+                    <Label styleClass="label-bold" text="Cantidad de puntos:" />
+                    <ComboBox fx:id="pointsCountCombo" prefWidth="80" />
+                </HBox>
+
+                <Separator />
+
+                <!-- Ejemplo -->
+                <Label styleClass="label-bold" text="Ejemplos:" />
+                <Button onAction="#onGenerateExample" prefWidth="300" styleClass="btn-info" text="Cargar Ejemplo (f(x)=x²)" />
+
+                <Separator />
+
+                <!-- Cálculo -->
+                <Label styleClass="label-bold" text="Cálculo:" />
+                <Button onAction="#onCalculate" prefWidth="300" styleClass="btn-success" text="Calcular Diferencias Divididas" />
+
+                <Separator />
+
+                <!-- Evaluación -->
+                <Label styleClass="label-bold" text="Evaluación:" />
+                <HBox spacing="5">
+                    <Label prefWidth="30" text="x =" />
+                    <TextField prefWidth="100" promptText="0.0" fx:id="xEvalField" />
+                    <Button onAction="#onEvaluate" prefWidth="80" styleClass="btn-primary" text="Evaluar" />
+                </HBox>
+
+                <Label fx:id="resultLabel" styleClass="result-text" text="Resultado: --" />
+
+                <Separator />
+
+                <!-- Error -->
+                <Label styleClass="label-bold" text="Análisis de Error:" />
+                <HBox spacing="5">
+                    <Label prefWidth="80" text="Valor real =" />
+                    <TextField fx:id="trueValueField" prefWidth="100" promptText="0.0" />
+                    <Button onAction="#onCalculateError" prefWidth="80" styleClass="btn-warning" text="Calcular" />
+                </HBox>
+
+                <Label fx:id="errorLabel" styleClass="error-text" text="Error: --" />
+
+                <Button onAction="#onClearResults" prefWidth="300" styleClass="btn-danger" text="Limpiar Resultados" />
+            </VBox>
+
+            <!-- Panel derecho: Salida de información -->
+            <VBox spacing="10" HBox.hgrow="ALWAYS">
+                <!-- Tabla de diferencias REAL -->
+                <VBox prefHeight="280" spacing="5" styleClass="panel" VBox.vgrow="ALWAYS">
+                    <Label styleClass="section-title" text="Tabla de Diferencias Divididas" />
+                    <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
+                        <TableView fx:id="differencesTable" styleClass="data-table" />
+                    </ScrollPane>
+                </VBox>
+
+                <!-- Polinomio -->
+                <VBox prefHeight="80" spacing="5" styleClass="panel">
+                    <Label styleClass="section-title" text="Polinomio de Newton" />
+                    <TextArea fx:id="polynomialArea" prefHeight="83.0" prefRowCount="3" prefWidth="478.0" styleClass="text-area-formula" wrapText="true" />
+                </VBox>
+
+                <!-- Proceso con LaTeX -->
+                <VBox prefHeight="280" spacing="5" styleClass="panel" VBox.vgrow="ALWAYS">
+                    <Label styleClass="section-title" text="Proceso Detallado (LaTeX)" />
+                    <ScrollPane fitToWidth="true" styleClass="scroll-pane" VBox.vgrow="ALWAYS">
+                        <VBox fx:id="processContainer" spacing="10" style="-fx-padding: 10;" />
+                    </ScrollPane>
+                </VBox>
+            </VBox>
+        </HBox>
+    </center>
+
+    <bottom>
+        <VBox spacing="5" styleClass="footer">
+            <padding>
+                <Insets bottom="10" left="15" right="15" top="10" />
+            </padding>
+            <Label styleClass="footer-text" text="© 2026 - Métodos Numéricos - Diferencias Divididas de Newton" />
+        </VBox>
+    </bottom>
+</BorderPane>
