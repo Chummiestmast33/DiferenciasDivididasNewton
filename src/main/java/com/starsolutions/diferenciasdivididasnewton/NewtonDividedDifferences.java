@@ -25,18 +25,18 @@ public class NewtonDividedDifferences {
             dividedDifferences[i][0] = yValues[i];
         }
 
-        process.add("=== PASO 1: Tabla de Diferencias Divididas ===");
+        process.add("PASO 1: Tabla de Diferencias Divididas");
         process.add(String.format("Datos iniciales: %d puntos", n));
         process.add("");
 
         for (int j = 1; j < n; j++) {
-            process.add("--- Orden " + (j + 1) + " ---");
+            process.add("Orden " + (j + 1));
             for (int i = 0; i < n - j; i++) {
                 double numerator = dividedDifferences[i + 1][j - 1] - dividedDifferences[i][j - 1];
                 double denominator = xValues[i + j] - xValues[i];
                 dividedDifferences[i][j] = numerator / denominator;
 
-                process.add(String.format("f[x%d,...,x%d] = (%.4f - %.4f) / (%.4f - %.4f) = %.6f",
+                process.add(String.format("f[x%d,...,x%d] = \\frac{(%.4f - %.4f)}{(%.4f - %.4f)} = %.6f",
                         i, i + j, dividedDifferences[i + 1][j - 1], dividedDifferences[i][j - 1],
                         xValues[i + j], xValues[i], dividedDifferences[i][j]));
             }
@@ -50,7 +50,7 @@ public class NewtonDividedDifferences {
         double product = 1.0;
 
         process.add("");
-        process.add("=== PASO 2: Evaluación del Polinomio ===");
+        process.add("PASO 2: Evaluación del Polinomio");
         process.add(String.format("Evaluando P(%.4f):", x));
         process.add(String.format("P(%.4f) = %.6f", x, result));
 
@@ -71,7 +71,7 @@ public class NewtonDividedDifferences {
         double relativeError = Math.abs(absoluteError / trueValue) * 100;
 
         process.add("");
-        process.add("=== PASO 3: Cálculo del Error ===");
+        process.add("PASO 3: Cálculo del Error");
         process.add(String.format("Valor predicho:  %.6f", predictedValue));
         process.add(String.format("Valor verdadero: %.6f", trueValue));
         process.add(String.format("Error absoluto:  %.6f", absoluteError));

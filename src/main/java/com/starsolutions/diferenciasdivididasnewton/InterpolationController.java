@@ -327,17 +327,17 @@ public class InterpolationController {
         for (String step : processSteps) {
             if (step.trim().isEmpty()) {
                 processContainer.getChildren().add(new Separator());
-            } else if (step.contains("===")) {
-                Label title = new Label(step.replace("===", "").trim());
+            } else if (step.startsWith("PASO ")) {
+                Label title = new Label(step.trim());
                 title.setStyle("-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #2c3e50; -fx-padding: 10 0 5 0;");
                 title.setWrapText(true);
                 processContainer.getChildren().add(title);
-            } else if (step.contains("---")) {
-                Label subtitle = new Label(step.replace("---", "").trim());
+            } else if (step.startsWith("Orden ")) {
+                Label subtitle = new Label(step.trim());
                 subtitle.setStyle("-fx-font-weight: bold; -fx-font-size: 12; -fx-text-fill: #34495e; -fx-padding: 8 0 4 0;");
                 subtitle.setWrapText(true);
                 processContainer.getChildren().add(subtitle);
-            } else if (step.contains("f[") || step.contains("=") || step.contains("/")) {
+            } else if (step.contains("f[") || step.contains("\\frac") || step.contains("=") || step.contains("/") || step.contains("÷")) {
                 String latex = convertStepToLatex(step);
                 try {
                     ImageView latexImage = LaTeXRenderer.renderLatex(latex);
@@ -364,9 +364,15 @@ public class InterpolationController {
     private String convertStepToLatex(String step) {
         String latex = step;
 
+        latex = latex.replaceAll("\\\\frac\\{\\((.*?)\\)\\}\\{\\((.*?)\\)\\}", "\\\\frac{$1}{$2}");
+
         latex = latex.replaceAll("(\\d+\\.?\\d*) / (\\d+\\.?\\d*)", "\\\\frac{$1}{$2}");
 
         latex = latex.replaceAll("(\\d+) / (\\d+)", "\\\\frac{$1}{$2}");
+
+        latex = latex.replaceAll("(\\d+\\.?\\d*) ÷ (\\d+\\.?\\d*)", "\\\\frac{$1}{$2}");
+
+        latex = latex.replaceAll("(\\d+) ÷ (\\d+)", "\\\\frac{$1}{$2}");
 
         latex = latex.replaceAll("f\\[(.*?)\\]", "f[$1]");
 
