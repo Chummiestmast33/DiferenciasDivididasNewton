@@ -21,7 +21,6 @@ public class NewtonDividedDifferences {
         dividedDifferences = new double[n][n];
         process.clear();
 
-        // Primera columna: valores de y
         for (int i = 0; i < n; i++) {
             dividedDifferences[i][0] = yValues[i];
         }
@@ -30,9 +29,8 @@ public class NewtonDividedDifferences {
         process.add(String.format("Datos iniciales: %d puntos", n));
         process.add("");
 
-        // Calcular las diferencias divididas
         for (int j = 1; j < n; j++) {
-            process.add("--- Columna " + (j + 1) + " ---");
+            process.add("--- Orden " + (j + 1) + " ---");
             for (int i = 0; i < n - j; i++) {
                 double numerator = dividedDifferences[i + 1][j - 1] - dividedDifferences[i][j - 1];
                 double denominator = xValues[i + j] - xValues[i];
@@ -93,7 +91,6 @@ public class NewtonDividedDifferences {
             sb.append(" + ");
             sb.append(String.format("%.6f", dividedDifferences[0][i]));
 
-            // Agregar los productos (x - x0)(x - x1)...(x - x_{i-1})
             for (int j = 0; j < i; j++) {
                 sb.append(String.format("(x - %.4f)", xValues[j]));
             }
@@ -116,7 +113,6 @@ public class NewtonDividedDifferences {
             sb.append(" + ");
             sb.append(String.format("%.6f", dividedDifferences[0][i]));
 
-            // Agregar los productos (x - x0)(x - x1)...(x - x_{i-1})
             for (int j = 0; j < i; j++) {
                 sb.append(String.format("(x - %.4f)", xValues[j]));
             }

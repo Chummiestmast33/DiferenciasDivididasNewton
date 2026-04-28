@@ -9,6 +9,9 @@ import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 
 public class InterpolationController {
     @FXML private TableView<Point> dataTable;
@@ -22,14 +25,15 @@ public class InterpolationController {
     @FXML private TextField yPointField;
     @FXML private ComboBox<Integer> pointsCountCombo;
 
-    // Nueva tabla real para diferencias
     @FXML private TableView<DifferenceRow> differencesTable;
 
-    // Contenedor para proceso con LaTeX
     @FXML private VBox processContainer;
 
-    // Área de polinomio
     @FXML private TextArea polynomialArea;
+
+    @FXML private LineChart<Number, Number> interpolationChart;
+    @FXML private NumberAxis xAxis;
+    @FXML private NumberAxis yAxis;
 
     private ObservableList<Point> dataPoints = FXCollections.observableArrayList();
     private ObservableList<DifferenceRow> differenceRows = FXCollections.observableArrayList();
@@ -37,18 +41,67 @@ public class InterpolationController {
 
     @FXML
     public void initialize() {
-        // Configurar tabla de datos de entrada
         xColumn.setCellValueFactory(cellData -> cellData.getValue().xProperty().asObject());
         yColumn.setCellValueFactory(cellData -> cellData.getValue().yProperty().asObject());
         dataTable.setItems(dataPoints);
 
-        // Configurar tabla de diferencias (se llenará dinámicamente)
         differencesTable.setItems(differenceRows);
 
-        // Configurar combobox
         ObservableList<Integer> pointCounts = FXCollections.observableArrayList(2, 3, 4, 5, 6, 7, 8);
         pointsCountCombo.setItems(pointCounts);
         pointsCountCombo.setValue(3);
+        
+        setupChartInteraction();
+    }
+
+    private void setupChartInteraction() {
+        if (interpolationChart == null) return;
+        
+        final double[] dragStart = new double[2];
+
+        interpolationChart.setOnMousePressed(evt -> {
+            dragStart[0] = evt.getX();
+            dragStart[1] = evt.getY();
+        });
+
+        interpolationChart.setOnMouseDragged(evt -> {
+            double scaleX = (xAxis.getUpperBound() - xAxis.getLowerBound()) / interpolationChart.getWidth();
+            double scaleY = (yAxis.getUpperBound() - yAxis.getLowerBound()) / interpolationChart.getHeight();
+
+            double dx = (evt.getX() - dragStart[0]) * scaleX;
+            double dy = (evt.getY() - dragStart[1]) * scaleY;
+
+            xAxis.setLowerBound(xAxis.getLowerBound() - dx);
+            xAxis.setUpperBound(xAxis.getUpperBound() - dx);
+
+            yAxis.setLowerBound(yAxis.getLowerBound() + dy);
+            yAxis.setUpperBound(yAxis.getUpperBound() + dy);
+
+            dragStart[0] = evt.getX();
+            dragStart[1] = evt.getY();
+        });
+
+        interpolationChart.setOnScroll(evt -> {
+            double zoomFactor = evt.getDeltaY() > 0 ? 0.9 : 1.1;
+            
+            double currentXRange = xAxis.getUpperBound() - xAxis.getLowerBound();
+            if (zoomFactor > 1 && currentXRange > 100000) return;
+            if (zoomFactor < 1 && currentXRange < 0.001) return;
+
+            double newXRange = (xAxis.getUpperBound() - xAxis.getLowerBound()) * zoomFactor;
+            double newYRange = (yAxis.getUpperBound() - yAxis.getLowerBound()) * zoomFactor;
+
+            double xMid = (xAxis.getLowerBound() + xAxis.getUpperBound()) / 2;
+            double yMid = (yAxis.getLowerBound() + yAxis.getUpperBound()) / 2;
+
+            xAxis.setLowerBound(xMid - newXRange / 2);
+            xAxis.setUpperBound(xMid + newXRange / 2);
+
+            yAxis.setLowerBound(yMid - newYRange / 2);
+            yAxis.setUpperBound(yMid + newYRange / 2);
+            
+            evt.consume();
+        });
     }
 
     @FXML
@@ -70,7 +123,6 @@ public class InterpolationController {
             xPointField.clear();
             yPointField.clear();
 
-            // Actualizar opciones del ComboBox
             updateComboBoxOptions();
         } catch (NumberFormatException e) {
             showAlert("Error", "Por favor ingresa números válidos");
@@ -82,7 +134,6 @@ public class InterpolationController {
         Point selected = dataTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
             dataPoints.remove(selected);
-            // Actualizar opciones del ComboBox
             updateComboBoxOptions();
         } else {
             showAlert("Advertencia", "Por favor selecciona un punto para eliminar");
@@ -92,7 +143,6 @@ public class InterpolationController {
     @FXML
     private void onClearData() {
         dataPoints.clear();
-        // Actualizar opciones del ComboBox
         updateComboBoxOptions();
         clearResults();
     }
@@ -111,7 +161,6 @@ public class InterpolationController {
             dataPoints.add(new Point(point[0], point[1]));
         }
 
-        // Actualizar opciones del ComboBox
         updateComboBoxOptions();
     }
 
@@ -123,30 +172,86 @@ public class InterpolationController {
         }
 
         try {
-            double[] xValues = new double[dataPoints.size()];
-            double[] yValues = new double[dataPoints.size()];
+            Integer selectedCount = pointsCountCombo.getValue();
+            int n = (selectedCount != null && selectedCount <= dataPoints.size()) ? selectedCount : dataPoints.size();
 
-            for (int i = 0; i < dataPoints.size(); i++) {
+            double[] xValues = new double[n];
+            double[] yValues = new double[n];
+
+            for (int i = 0; i < n; i++) {
                 xValues[i] = dataPoints.get(i).getX();
                 yValues[i] = dataPoints.get(i).getY();
             }
 
             solver = new NewtonDividedDifferences(xValues, yValues);
 
-            // Llenar tabla de diferencias REAL
             populateDifferencesTable(xValues, solver.getDividedDifferencesTable());
 
-            // Mostrar polinomio (solo forma original en LaTeX)
             polynomialArea.setText(solver.getPolynomialString());
             polynomialArea.setStyle("-fx-font-size: 14; -fx-control-inner-background: #fff8f8;");
 
-            // Renderizar proceso con LaTeX
             renderProcessWithLatex(solver.getProcessSteps(), xValues);
+
+            plotGraph(xValues, yValues);
 
             showAlert("Éxito", "Diferencias divididas calculadas correctamente");
         } catch (Exception e) {
             showAlert("Error", "Error al calcular: " + e.getMessage());
         }
+    }
+
+    private void plotGraph(double[] xValues, double[] yValues) {
+        if (solver == null || interpolationChart == null) return;
+        
+        interpolationChart.getData().clear();
+        
+        XYChart.Series<Number, Number> pointsSeries = new XYChart.Series<>();
+        pointsSeries.setName("Puntos dados");
+        
+        double minX = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE;
+        
+        for (int i = 0; i < xValues.length; i++) {
+            pointsSeries.getData().add(new XYChart.Data<>(xValues[i], yValues[i]));
+            if (xValues[i] < minX) minX = xValues[i];
+            if (xValues[i] > maxX) maxX = xValues[i];
+        }
+        
+        double paddingX = Math.max(1.0, (maxX - minX) * 0.2);
+        xAxis.setLowerBound(minX - paddingX);
+        xAxis.setUpperBound(maxX + paddingX);
+
+        XYChart.Series<Number, Number> polySeries = new XYChart.Series<>();
+        polySeries.setName("Polinomio Interpolante");
+        
+        int steps = 100;
+        double startX = xAxis.getLowerBound();
+        double endX = xAxis.getUpperBound();
+        double stepSize = (endX - startX) / steps;
+        
+        double minY = Double.MAX_VALUE;
+        double maxY = -Double.MAX_VALUE;
+        
+        for (int i = 0; i <= steps; i++) {
+            double currentX = startX + (i * stepSize);
+            double currentY = solver.evaluate(currentX);
+            polySeries.getData().add(new XYChart.Data<>(currentX, currentY));
+            
+            if (currentY < minY) minY = currentY;
+            if (currentY > maxY) maxY = currentY;
+        }
+        
+        double yPadding = Math.max(1.0, (maxY - minY) * 0.2);
+        
+        if (!Double.isInfinite(minY) && !Double.isInfinite(maxY)) {
+            yAxis.setLowerBound(minY - yPadding);
+            yAxis.setUpperBound(maxY + yPadding);
+        } else {
+            yAxis.setLowerBound(-100);
+            yAxis.setUpperBound(100);
+        }
+
+        interpolationChart.getData().addAll(polySeries, pointsSeries);
     }
 
     /**
@@ -156,19 +261,13 @@ public class InterpolationController {
         differenceRows.clear();
         int n = xValues.length;
 
-        // Crear filas - cada fila i corresponde al punto i
         for (int i = 0; i < n; i++) {
             DifferenceRow row = new DifferenceRow(xValues[i], n);
 
-            // Para cada fila i, asignar los valores correctos:
-            // Columna j debe contener differences[i-j][j]
-            // Es decir, la diferencia que INCLUYE el punto i
             for (int j = 0; j < n; j++) {
-                // differences[row][col] donde row = i-j, col = j
                 int diffRow = i - j;
 
                 if (diffRow >= 0 && diffRow < n && j < n) {
-                    // Verificar que el valor tenga sentido
                     if (differences[diffRow][j] != Double.NaN) {
                         row.setDifference(j, differences[diffRow][j]);
                     }
@@ -178,16 +277,13 @@ public class InterpolationController {
             differenceRows.add(row);
         }
 
-        // Crear columnas dinámicamente
         differencesTable.getColumns().clear();
 
-        // Columna X
         TableColumn<DifferenceRow, Double> xCol = new TableColumn<>("x");
         xCol.setCellValueFactory(cellData -> cellData.getValue().xProperty().asObject());
         xCol.setPrefWidth(80);
         differencesTable.getColumns().add(xCol);
 
-        // Columnas de diferencias - calcular ancho dinámicamente
         int numColumns = n;
         double columnWidth = Math.max(90, (differencesTable.getPrefWidth() - 100) / numColumns);
 
@@ -204,7 +300,6 @@ public class InterpolationController {
             col.setPrefWidth(columnWidth);
             col.setStyle("-fx-alignment: CENTER-RIGHT;");
 
-            // Formatear las celdas para mostrar los valores correctamente
             col.setCellFactory(column -> new javafx.scene.control.TableCell<DifferenceRow, Double>() {
                 @Override
                 protected void updateItem(Double item, boolean empty) {
@@ -220,8 +315,7 @@ public class InterpolationController {
             differencesTable.getColumns().add(col);
         }
 
-        // Permitir que la tabla se expanda
-        differencesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        differencesTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
     }
 
     /**
@@ -232,36 +326,30 @@ public class InterpolationController {
 
         for (String step : processSteps) {
             if (step.trim().isEmpty()) {
-                // Espacio en blanco
                 processContainer.getChildren().add(new Separator());
             } else if (step.contains("===")) {
-                // Título principal (PASO X)
                 Label title = new Label(step.replace("===", "").trim());
                 title.setStyle("-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #2c3e50; -fx-padding: 10 0 5 0;");
                 title.setWrapText(true);
                 processContainer.getChildren().add(title);
             } else if (step.contains("---")) {
-                // Subtítulo (Columna X)
                 Label subtitle = new Label(step.replace("---", "").trim());
                 subtitle.setStyle("-fx-font-weight: bold; -fx-font-size: 12; -fx-text-fill: #34495e; -fx-padding: 8 0 4 0;");
                 subtitle.setWrapText(true);
                 processContainer.getChildren().add(subtitle);
             } else if (step.contains("f[") || step.contains("=") || step.contains("/")) {
-                // Convertir a LaTeX y renderizar
                 String latex = convertStepToLatex(step);
                 try {
                     ImageView latexImage = LaTeXRenderer.renderLatex(latex);
                     latexImage.setStyle("-fx-padding: 5;");
                     processContainer.getChildren().add(latexImage);
                 } catch (Exception e) {
-                    // Fallback: mostrar como texto
                     Label label = new Label(step);
                     label.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 11;");
                     label.setWrapText(true);
                     processContainer.getChildren().add(label);
                 }
             } else {
-                // Texto normal
                 Label label = new Label(step);
                 label.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 11; -fx-text-fill: #34495e;");
                 label.setWrapText(true);
@@ -276,14 +364,10 @@ public class InterpolationController {
     private String convertStepToLatex(String step) {
         String latex = step;
 
-        // Convertir divisiones típicas "a / b" a fracciones LaTeX "\frac{a}{b}"
-        // Patrón: número.número / número.número
         latex = latex.replaceAll("(\\d+\\.?\\d*) / (\\d+\\.?\\d*)", "\\\\frac{$1}{$2}");
 
-        // También convertir números sin decimales
         latex = latex.replaceAll("(\\d+) / (\\d+)", "\\\\frac{$1}{$2}");
 
-        // Convertir notación de diferencias divididas
         latex = latex.replaceAll("f\\[(.*?)\\]", "f[$1]");
 
         return latex;
@@ -302,8 +386,47 @@ public class InterpolationController {
 
             resultLabel.setText(FormulaFormatter.formatEvaluationResult(x, result));
             resultLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-size: 16; -fx-font-family: 'Courier New';");
+            
+            highlightPointInChart(x, result);
         } catch (NumberFormatException e) {
             showAlert("Error", "Por favor ingresa un número válido para x");
+        }
+    }
+
+    private void highlightPointInChart(double x, double y) {
+        if(interpolationChart == null || interpolationChart.getData().isEmpty()) return;
+        
+        ObservableList<XYChart.Series<Number, Number>> data = interpolationChart.getData();
+        
+        XYChart.Series<Number, Number> highlightSeries = null;
+        for(XYChart.Series<Number, Number> s : data) {
+            if("Punto Evaluado".equals(s.getName())) {
+                highlightSeries = s;
+                break;
+            }
+        }
+        
+        if(highlightSeries == null) {
+            highlightSeries = new XYChart.Series<>();
+            highlightSeries.setName("Punto Evaluado");
+            data.add(highlightSeries);
+        }
+        
+        highlightSeries.getData().clear();
+        XYChart.Data<Number, Number> newPoint = new XYChart.Data<>(x, y);
+        highlightSeries.getData().add(newPoint);
+        
+        if (x < xAxis.getLowerBound() || x > xAxis.getUpperBound() ||
+            y < yAxis.getLowerBound() || y > yAxis.getUpperBound()) {
+
+            double paddingX = (xAxis.getUpperBound() - xAxis.getLowerBound()) * 0.1;
+            double paddingY = (yAxis.getUpperBound() - yAxis.getLowerBound()) * 0.1;
+
+            xAxis.setLowerBound(x - paddingX);
+            xAxis.setUpperBound(x + paddingX);
+
+            yAxis.setLowerBound(y - paddingY);
+            yAxis.setUpperBound(y + paddingY);
         }
     }
 
@@ -340,6 +463,9 @@ public class InterpolationController {
         processContainer.getChildren().clear();
         polynomialArea.clear();
         differenceRows.clear();
+        if (interpolationChart != null) {
+            interpolationChart.getData().clear();
+        }
         solver = null;
     }
 
@@ -349,23 +475,20 @@ public class InterpolationController {
     private void updateComboBoxOptions() {
         int currentPointCount = dataPoints.size();
 
-        // Crear lista de opciones desde 2 hasta la cantidad actual de puntos
         ObservableList<Integer> validCounts = FXCollections.observableArrayList();
         for (int i = 2; i <= currentPointCount; i++) {
             validCounts.add(i);
         }
 
-        // Si no hay opciones válidas, mostrar opciones por defecto
         if (validCounts.isEmpty()) {
             validCounts = FXCollections.observableArrayList(2, 3, 4, 5, 6, 7, 8);
         }
 
         pointsCountCombo.setItems(validCounts);
 
-        // Si el valor actual seleccionado es mayor que la cantidad de puntos, ajustarlo
         Integer currentValue = pointsCountCombo.getValue();
         if (currentValue == null || currentValue > currentPointCount) {
-            pointsCountCombo.setValue(validCounts.get(validCounts.size() - 1));
+            pointsCountCombo.setValue(validCounts.get(0));
         }
     }
 

@@ -23,29 +23,23 @@ public class LaTeXRenderer {
      */
     public static ImageView renderLatex(String latexFormula) {
         try {
-            // Crear fórmula LaTeX
             TeXFormula formula = new TeXFormula(latexFormula);
 
-            // Convertir a icono con el tamaño deseado
             TeXIcon icon = formula.new TeXIconBuilder()
                     .setStyle(TeXConstants.STYLE_DISPLAY)
                     .setSize(FONT_SIZE)
                     .build();
 
-            // Crear imagen BufferedImage
             BufferedImage bufferedImage = new BufferedImage(
                     icon.getIconWidth(),
                     icon.getIconHeight(),
                     BufferedImage.TYPE_INT_ARGB
             );
 
-            // Dibujar el icono en la imagen
             icon.paintIcon(new JPanel(), bufferedImage.getGraphics(), 0, 0);
 
-            // Convertir BufferedImage a Image de JavaFX
             Image image = convertToFXImage(bufferedImage);
 
-            // Crear ImageView
             ImageView imageView = new ImageView(image);
             imageView.setPreserveRatio(true);
             imageView.setSmooth(true);
@@ -69,7 +63,6 @@ public class LaTeXRenderer {
             ImageView imageView = renderLatex(latexFormula);
             container.getChildren().add(imageView);
         } catch (Exception e) {
-            // Fallback: mostrar texto plano si falla LaTeX
             javafx.scene.control.Label label = new javafx.scene.control.Label(latexFormula);
             label.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 11;");
             container.getChildren().add(label);
@@ -97,10 +90,8 @@ public class LaTeXRenderer {
                 latex.append(" + ");
             }
 
-            // Coeficiente
             latex.append(String.format("%.4f", coefficients[i]));
 
-            // Productos
             if (i > 0) {
                 for (int j = 0; j < i; j++) {
                     latex.append(String.format("(x - %.2f)", xValues[j]));
@@ -132,13 +123,11 @@ public class LaTeXRenderer {
         StringBuilder latex = new StringBuilder();
         latex.append("\\begin{array}{");
 
-        // Encabezados de columna
         for (int i = 0; i < table[0].length; i++) {
             latex.append("c|");
         }
         latex.append("}\n");
 
-        // Filas
         for (int i = 0; i < table.length; i++) {
             latex.append(String.format("x_{%d}=%.2f", i, xValues[i]));
             for (int j = 0; j < Math.min(i + 1, table[i].length); j++) {
