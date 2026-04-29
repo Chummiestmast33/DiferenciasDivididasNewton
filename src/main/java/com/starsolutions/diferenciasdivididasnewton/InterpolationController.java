@@ -1,5 +1,6 @@
 package com.starsolutions.diferenciasdivididasnewton;
 
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.DoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -8,12 +9,19 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 
 public class InterpolationController {
+
+    @FXML private StackPane zoomTarget;
+    @FXML private ScrollPane mainScrollPane;
+    private double globalScale = 1.0;
+    private AnimationTimer activeTimer;
+
     @FXML private TableView<Point> dataTable;
     @FXML private TableColumn<Point, Double> xColumn;
     @FXML private TableColumn<Point, Double> yColumn;
@@ -26,11 +34,8 @@ public class InterpolationController {
     @FXML private ComboBox<Integer> pointsCountCombo;
 
     @FXML private TableView<DifferenceRow> differencesTable;
-
     @FXML private VBox processContainer;
-
     @FXML private TextArea polynomialArea;
-
     @FXML private LineChart<Number, Number> interpolationChart;
     @FXML private NumberAxis xAxis;
     @FXML private NumberAxis yAxis;
@@ -50,13 +55,74 @@ public class InterpolationController {
         ObservableList<Integer> pointCounts = FXCollections.observableArrayList(2, 3, 4, 5, 6, 7, 8);
         pointsCountCombo.setItems(pointCounts);
         pointsCountCombo.setValue(3);
-        
+
         setupChartInteraction();
+    }
+
+    // Zoom y movimiento
+    @FXML private void onGlobalZoomIn() { globalScale += 0.1; applyScale(); }
+    @FXML private void onGlobalZoomOut() { if(globalScale > 0.6) globalScale -= 0.1; applyScale(); }
+
+    @FXML private void onResetZoom() {
+        globalScale = 1.0;
+        applyScale();
+        // Restaurar también la posición al centrar
+        if (zoomTarget != null) {
+            zoomTarget.setTranslateX(0);
+            zoomTarget.setTranslateY(0);
+        }
+    }
+
+    private void applyScale() {
+        if (zoomTarget != null) {
+            zoomTarget.setScaleX(globalScale);
+            zoomTarget.setScaleY(globalScale);
+        }
+    }
+
+    private void startContinuousAction(Runnable action) {
+        if (activeTimer != null) activeTimer.stop();
+        activeTimer = new AnimationTimer() {
+            private long lastUpdate = 0;
+            @Override
+            public void handle(long now) {
+                if (now - lastUpdate >= 50_000_000) { // 50ms
+                    action.run();
+                    lastUpdate = now;
+                }
+            }
+        };
+        activeTimer.start();
+    }
+
+    private void stopContinuousAction() {
+        if (activeTimer != null) activeTimer.stop();
+    }
+
+    @FXML private void startZoomIn() { startContinuousAction(this::onGlobalZoomIn); }
+    @FXML private void startZoomOut() { startContinuousAction(this::onGlobalZoomOut); }
+    @FXML private void startMoveUp() { startContinuousAction(this::onMoveUp); }
+    @FXML private void startMoveDown() { startContinuousAction(this::onMoveDown); }
+    @FXML private void startMoveLeft() { startContinuousAction(this::onMoveLeft); }
+    @FXML private void startMoveRight() { startContinuousAction(this::onMoveRight); }
+    @FXML private void onReleased() { stopContinuousAction(); }
+
+    @FXML private void onMoveUp() {
+        if(zoomTarget != null) zoomTarget.setTranslateY(zoomTarget.getTranslateY() + 25);
+    }
+    @FXML private void onMoveDown() {
+        if(zoomTarget != null) zoomTarget.setTranslateY(zoomTarget.getTranslateY() - 25);
+    }
+    @FXML private void onMoveLeft() {
+        if(zoomTarget != null) zoomTarget.setTranslateX(zoomTarget.getTranslateX() + 25);
+    }
+    @FXML private void onMoveRight() {
+        if(zoomTarget != null) zoomTarget.setTranslateX(zoomTarget.getTranslateX() - 25);
     }
 
     private void setupChartInteraction() {
         if (interpolationChart == null) return;
-        
+
         final double[] dragStart = new double[2];
 
         interpolationChart.setOnMousePressed(evt -> {
@@ -83,7 +149,7 @@ public class InterpolationController {
 
         interpolationChart.setOnScroll(evt -> {
             double zoomFactor = evt.getDeltaY() > 0 ? 0.9 : 1.1;
-            
+
             double currentXRange = xAxis.getUpperBound() - xAxis.getLowerBound();
             if (zoomFactor > 1 && currentXRange > 100000) return;
             if (zoomFactor < 1 && currentXRange < 0.001) return;
@@ -99,7 +165,7 @@ public class InterpolationController {
 
             yAxis.setLowerBound(yMid - newYRange / 2);
             yAxis.setUpperBound(yMid + newYRange / 2);
-            
+
             evt.consume();
         });
     }
@@ -202,47 +268,47 @@ public class InterpolationController {
 
     private void plotGraph(double[] xValues, double[] yValues) {
         if (solver == null || interpolationChart == null) return;
-        
+
         interpolationChart.getData().clear();
-        
+
         XYChart.Series<Number, Number> pointsSeries = new XYChart.Series<>();
         pointsSeries.setName("Puntos dados");
-        
+
         double minX = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE;
-        
+
         for (int i = 0; i < xValues.length; i++) {
             pointsSeries.getData().add(new XYChart.Data<>(xValues[i], yValues[i]));
             if (xValues[i] < minX) minX = xValues[i];
             if (xValues[i] > maxX) maxX = xValues[i];
         }
-        
+
         double paddingX = Math.max(1.0, (maxX - minX) * 0.2);
         xAxis.setLowerBound(minX - paddingX);
         xAxis.setUpperBound(maxX + paddingX);
 
         XYChart.Series<Number, Number> polySeries = new XYChart.Series<>();
         polySeries.setName("Polinomio Interpolante");
-        
+
         int steps = 100;
         double startX = xAxis.getLowerBound();
         double endX = xAxis.getUpperBound();
         double stepSize = (endX - startX) / steps;
-        
+
         double minY = Double.MAX_VALUE;
         double maxY = -Double.MAX_VALUE;
-        
+
         for (int i = 0; i <= steps; i++) {
             double currentX = startX + (i * stepSize);
             double currentY = solver.evaluate(currentX);
             polySeries.getData().add(new XYChart.Data<>(currentX, currentY));
-            
+
             if (currentY < minY) minY = currentY;
             if (currentY > maxY) maxY = currentY;
         }
-        
+
         double yPadding = Math.max(1.0, (maxY - minY) * 0.2);
-        
+
         if (!Double.isInfinite(minY) && !Double.isInfinite(maxY)) {
             yAxis.setLowerBound(minY - yPadding);
             yAxis.setUpperBound(maxY + yPadding);
@@ -254,9 +320,6 @@ public class InterpolationController {
         interpolationChart.getData().addAll(polySeries, pointsSeries);
     }
 
-    /**
-     * Llena la tabla real con los datos de diferencias divididas
-     */
     private void populateDifferencesTable(double[] xValues, double[][] differences) {
         differenceRows.clear();
         int n = xValues.length;
@@ -318,9 +381,6 @@ public class InterpolationController {
         differencesTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
     }
 
-    /**
-     * Renderiza el proceso con LaTeX
-     */
     private void renderProcessWithLatex(java.util.List<String> processSteps, double[] xValues) {
         processContainer.getChildren().clear();
 
@@ -358,24 +418,14 @@ public class InterpolationController {
         }
     }
 
-    /**
-     * Convierte un paso del proceso a LaTeX con fracciones
-     */
     private String convertStepToLatex(String step) {
         String latex = step;
-
         latex = latex.replaceAll("\\\\frac\\{\\((.*?)\\)\\}\\{\\((.*?)\\)\\}", "\\\\frac{$1}{$2}");
-
         latex = latex.replaceAll("(\\d+\\.?\\d*) / (\\d+\\.?\\d*)", "\\\\frac{$1}{$2}");
-
         latex = latex.replaceAll("(\\d+) / (\\d+)", "\\\\frac{$1}{$2}");
-
         latex = latex.replaceAll("(\\d+\\.?\\d*) ÷ (\\d+\\.?\\d*)", "\\\\frac{$1}{$2}");
-
         latex = latex.replaceAll("(\\d+) ÷ (\\d+)", "\\\\frac{$1}{$2}");
-
         latex = latex.replaceAll("f\\[(.*?)\\]", "f[$1]");
-
         return latex;
     }
 
@@ -392,7 +442,7 @@ public class InterpolationController {
 
             resultLabel.setText(FormulaFormatter.formatEvaluationResult(x, result));
             resultLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-size: 16; -fx-font-family: 'Courier New';");
-            
+
             highlightPointInChart(x, result);
         } catch (NumberFormatException e) {
             showAlert("Error", "Por favor ingresa un número válido para x");
@@ -401,9 +451,9 @@ public class InterpolationController {
 
     private void highlightPointInChart(double x, double y) {
         if(interpolationChart == null || interpolationChart.getData().isEmpty()) return;
-        
+
         ObservableList<XYChart.Series<Number, Number>> data = interpolationChart.getData();
-        
+
         XYChart.Series<Number, Number> highlightSeries = null;
         for(XYChart.Series<Number, Number> s : data) {
             if("Punto Evaluado".equals(s.getName())) {
@@ -411,19 +461,19 @@ public class InterpolationController {
                 break;
             }
         }
-        
+
         if(highlightSeries == null) {
             highlightSeries = new XYChart.Series<>();
             highlightSeries.setName("Punto Evaluado");
             data.add(highlightSeries);
         }
-        
+
         highlightSeries.getData().clear();
         XYChart.Data<Number, Number> newPoint = new XYChart.Data<>(x, y);
         highlightSeries.getData().add(newPoint);
-        
+
         if (x < xAxis.getLowerBound() || x > xAxis.getUpperBound() ||
-            y < yAxis.getLowerBound() || y > yAxis.getUpperBound()) {
+                y < yAxis.getLowerBound() || y > yAxis.getUpperBound()) {
 
             double paddingX = (xAxis.getUpperBound() - xAxis.getLowerBound()) * 0.1;
             double paddingY = (yAxis.getUpperBound() - yAxis.getLowerBound()) * 0.1;
@@ -475,9 +525,6 @@ public class InterpolationController {
         solver = null;
     }
 
-    /**
-     * Actualiza dinámicamente las opciones del ComboBox basado en la cantidad de puntos
-     */
     private void updateComboBoxOptions() {
         int currentPointCount = dataPoints.size();
 
@@ -506,9 +553,6 @@ public class InterpolationController {
         alert.showAndWait();
     }
 
-    /**
-     * Clase interna para representar un punto
-     */
     public static class Point {
         private javafx.beans.property.DoubleProperty x = new javafx.beans.property.SimpleDoubleProperty();
         private javafx.beans.property.DoubleProperty y = new javafx.beans.property.SimpleDoubleProperty();
@@ -518,20 +562,9 @@ public class InterpolationController {
             this.y.set(y);
         }
 
-        public double getX() {
-            return x.get();
-        }
-
-        public double getY() {
-            return y.get();
-        }
-
-        public javafx.beans.property.DoubleProperty xProperty() {
-            return x;
-        }
-
-        public javafx.beans.property.DoubleProperty yProperty() {
-            return y;
-        }
+        public double getX() { return x.get(); }
+        public double getY() { return y.get(); }
+        public javafx.beans.property.DoubleProperty xProperty() { return x; }
+        public javafx.beans.property.DoubleProperty yProperty() { return y; }
     }
 }

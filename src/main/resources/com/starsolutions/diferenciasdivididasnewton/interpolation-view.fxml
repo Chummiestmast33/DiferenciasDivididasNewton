@@ -5,136 +5,164 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.chart.*?>
 
-<BorderPane styleClass="root" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.starsolutions.diferenciasdivididasnewton.InterpolationController">
-    <top>
-        <VBox spacing="10" styleClass="header">
-            <padding>
-                <Insets bottom="15" left="15" right="15" top="15" />
-            </padding>
-            <Label styleClass="title" text="Interpolación por Diferencias Divididas de Newton" />
-            <Label styleClass="subtitle" text="Ingresa puntos de datos, calcula las diferencias divididas y evalúa el polinomio" />
-        </VBox>
-    </top>
+<StackPane styleClass="root" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.starsolutions.diferenciasdivididasnewton.InterpolationController">
 
-    <center>
-        <TabPane tabClosingPolicy="UNAVAILABLE">
-            <tabs>
-                <Tab text="Cálculos">
-                    <HBox spacing="15">
-                        <padding>
-                            <Insets bottom="15" left="15" right="15" top="15" />
-                        </padding>
+    <ScrollPane fx:id="mainScrollPane" fitToWidth="true" fitToHeight="true" pannable="true" styleClass="transparent-scroll" hbarPolicy="NEVER" vbarPolicy="NEVER">
+        <content>
+            <StackPane fx:id="zoomTarget" alignment="CENTER">
 
-                        <VBox prefWidth="350" spacing="10" styleClass="panel">
-                            <Label styleClass="section-title" text="Datos de Entrada" />
-
-                            <Label styleClass="label-bold" text="Puntos (x, y):" />
-                            <HBox spacing="5">
-                                <TextField prefWidth="80" promptText="x" fx:id="xPointField" />
-                                <TextField fx:id="yPointField" prefWidth="80" promptText="y" />
-                                <Button onAction="#onAddPoint" prefWidth="80" styleClass="btn-primary" text="Agregar" />
-                            </HBox>
-
-                            <TableView fx:id="dataTable" prefHeight="200" styleClass="data-table">
-                                <columns>
-                                    <TableColumn prefWidth="80" text="x" fx:id="xColumn" />
-                                    <TableColumn fx:id="yColumn" prefWidth="80" text="y" />
-                                </columns>
-                            </TableView>
-
-                            <HBox spacing="5">
-                                <Button onAction="#onRemovePoint" prefWidth="150" styleClass="btn-danger" text="Eliminar Seleccionado" />
-                                <Button onAction="#onClearData" prefWidth="150" styleClass="btn-warning" text="Limpiar Todo" />
-                            </HBox>
-
-                            <HBox alignment="CENTER_LEFT" spacing="5">
-                                <Label styleClass="label-bold" text="Cantidad de puntos:" />
-                                <ComboBox fx:id="pointsCountCombo" prefWidth="80" />
-                            </HBox>
-
-                            <Separator />
-
-                            <Label styleClass="label-bold" text="Ejemplos:" />
-                            <Button onAction="#onGenerateExample" prefWidth="300" styleClass="btn-info" text="Cargar Ejemplo (f(x)=x²)" />
-
-                            <Separator />
-
-                            <Label styleClass="label-bold" text="Cálculo:" />
-                            <Button onAction="#onCalculate" prefWidth="300" styleClass="btn-success" text="Calcular Diferencias Divididas" />
-
-                            <Separator />
-
-                            <Label styleClass="label-bold" text="Evaluación:" />
-                            <HBox spacing="5">
-                                <Label prefWidth="30" text="x =" />
-                                <TextField prefWidth="100" promptText="0.0" fx:id="xEvalField" />
-                                <Button onAction="#onEvaluate" prefWidth="80" styleClass="btn-primary" text="Evaluar" />
-                            </HBox>
-
-                            <Label fx:id="resultLabel" styleClass="result-text" text="Resultado: --" />
-
-                            <Separator />
-
-                            <Label styleClass="label-bold" text="Análisis de Error:" />
-                            <HBox spacing="5">
-                                <Label prefWidth="80" text="Valor real =" />
-                                <TextField fx:id="trueValueField" prefWidth="100" promptText="0.0" />
-                                <Button onAction="#onCalculateError" prefWidth="80" styleClass="btn-warning" text="Calcular" />
-                            </HBox>
-
-                            <Label fx:id="errorLabel" styleClass="error-text" text="Error: --" />
-
-                            <Button onAction="#onClearResults" prefWidth="300" styleClass="btn-danger" text="Limpiar Resultados" />
+                <BorderPane minWidth="1100" minHeight="700">
+                    <top>
+                        <VBox spacing="10" styleClass="header">
+                            <padding>
+                                <Insets bottom="15" left="15" right="15" top="15" />
+                            </padding>
+                            <Label styleClass="title" text="Interpolación por Diferencias Divididas de Newton" />
+                            <Label styleClass="subtitle" text="Ingresa puntos de datos, calcula las diferencias divididas y evalúa el polinomio" />
                         </VBox>
+                    </top>
 
-                        <VBox spacing="10" HBox.hgrow="ALWAYS">
-                            <VBox prefHeight="280" spacing="5" styleClass="panel" VBox.vgrow="ALWAYS">
-                                <Label styleClass="section-title" text="Tabla de Diferencias Divididas" />
-                                <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
-                                    <TableView fx:id="differencesTable" styleClass="data-table" />
-                                </ScrollPane>
-                            </VBox>
+                    <center>
+                        <TabPane tabClosingPolicy="UNAVAILABLE">
+                            <tabs>
+                                <Tab text="Cálculos">
+                                    <HBox spacing="15">
+                                        <padding>
+                                            <Insets bottom="15" left="15" right="15" top="15" />
+                                        </padding>
 
-                            <VBox prefHeight="80" spacing="5" styleClass="panel">
-                                <Label styleClass="section-title" text="Polinomio de Newton" />
-                                <TextArea fx:id="polynomialArea" prefHeight="83.0" prefRowCount="3" prefWidth="478.0" styleClass="text-area-formula" wrapText="true" />
-                            </VBox>
+                                        <VBox prefWidth="360" styleClass="panel">
+                                            <ScrollPane fitToWidth="true" styleClass="left-scroll-panel" VBox.vgrow="ALWAYS">
+                                                <content>
+                                                    <VBox spacing="10">
+                                                        <Label styleClass="section-title" text="Datos de Entrada" />
 
-                            <VBox prefHeight="280" spacing="5" styleClass="panel" VBox.vgrow="ALWAYS">
-                                <Label styleClass="section-title" text="Proceso Detallado (LaTeX)" />
-                                <ScrollPane fitToWidth="true" styleClass="scroll-pane" VBox.vgrow="ALWAYS">
-                                    <VBox fx:id="processContainer" spacing="10" style="-fx-padding: 10;" />
-                                </ScrollPane>
-                            </VBox>
+                                                        <Label styleClass="label-bold" text="Puntos (x, y):" />
+                                                        <HBox spacing="5">
+                                                            <TextField prefWidth="80" promptText="x" fx:id="xPointField" />
+                                                            <TextField fx:id="yPointField" prefWidth="80" promptText="y" />
+                                                            <Button onAction="#onAddPoint" prefWidth="80" styleClass="btn-primary" text="Agregar" />
+                                                        </HBox>
+
+                                                        <TableView fx:id="dataTable" prefHeight="300" VBox.vgrow="ALWAYS" styleClass="data-table">
+                                                            <columns>
+                                                                <TableColumn prefWidth="80" text="x" fx:id="xColumn" />
+                                                                <TableColumn fx:id="yColumn" prefWidth="80" text="y" />
+                                                            </columns>
+                                                        </TableView>
+
+                                                        <HBox spacing="5">
+                                                            <Button onAction="#onRemovePoint" prefWidth="150" styleClass="btn-danger" text="Eliminar Seleccionado" />
+                                                            <Button onAction="#onClearData" prefWidth="150" styleClass="btn-warning" text="Limpiar Todo" />
+                                                        </HBox>
+
+                                                        <HBox alignment="CENTER_LEFT" spacing="5">
+                                                            <Label styleClass="label-bold" text="Cantidad de puntos:" />
+                                                            <ComboBox fx:id="pointsCountCombo" prefWidth="80" />
+                                                        </HBox>
+
+                                                        <Separator />
+                                                        <Label styleClass="label-bold" text="Ejemplos:" />
+                                                        <Button onAction="#onGenerateExample" prefWidth="300" styleClass="btn-info" text="Cargar Ejemplo (f(x)=x²)" />
+
+                                                        <Separator />
+                                                        <Label styleClass="label-bold" text="Cálculo:" />
+                                                        <Button onAction="#onCalculate" prefWidth="300" styleClass="btn-success" text="Calcular Diferencias Divididas" />
+
+                                                        <Separator />
+                                                        <Label styleClass="label-bold" text="Evaluación:" />
+                                                        <HBox spacing="5">
+                                                            <Label prefWidth="30" text="x =" />
+                                                            <TextField prefWidth="100" promptText="0.0" fx:id="xEvalField" />
+                                                            <Button onAction="#onEvaluate" prefWidth="80" styleClass="btn-primary" text="Evaluar" />
+                                                        </HBox>
+                                                        <Label fx:id="resultLabel" styleClass="result-text" text="Resultado: --" />
+
+                                                        <Separator />
+                                                        <Label styleClass="label-bold" text="Análisis de Error:" />
+                                                        <HBox spacing="5">
+                                                            <Label prefWidth="80" text="Valor real =" />
+                                                            <TextField fx:id="trueValueField" prefWidth="100" promptText="0.0" />
+                                                            <Button onAction="#onCalculateError" prefWidth="80" styleClass="btn-warning" text="Calcular" />
+                                                        </HBox>
+                                                        <Label fx:id="errorLabel" styleClass="error-text" text="Error: --" />
+
+                                                        <Button onAction="#onClearResults" prefWidth="300" styleClass="btn-danger" text="Limpiar Resultados" />
+                                                    </VBox>
+                                                </content>
+                                            </ScrollPane>
+                                        </VBox>
+
+                                        <VBox spacing="10" HBox.hgrow="ALWAYS">
+                                            <VBox prefHeight="280" spacing="5" styleClass="panel" VBox.vgrow="ALWAYS">
+                                                <Label styleClass="section-title" text="Tabla de Diferencias Divididas" />
+                                                <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
+                                                    <TableView fx:id="differencesTable" styleClass="data-table" />
+                                                </ScrollPane>
+                                            </VBox>
+
+                                            <VBox prefHeight="80" spacing="5" styleClass="panel">
+                                                <Label styleClass="section-title" text="Polinomio de Newton" />
+                                                <TextArea fx:id="polynomialArea" prefHeight="83.0" prefRowCount="3" prefWidth="478.0" styleClass="text-area-formula" wrapText="true" />
+                                            </VBox>
+
+                                            <VBox prefHeight="280" spacing="5" styleClass="panel" VBox.vgrow="ALWAYS">
+                                                <Label styleClass="section-title" text="Proceso Detallado (LaTeX)" />
+                                                <ScrollPane fitToWidth="true" styleClass="scroll-pane" VBox.vgrow="ALWAYS">
+                                                    <VBox fx:id="processContainer" spacing="10" style="-fx-padding: 10;" />
+                                                </ScrollPane>
+                                            </VBox>
+                                        </VBox>
+                                    </HBox>
+                                </Tab>
+                                <Tab text="Gráfica">
+                                    <VBox spacing="10" VBox.vgrow="ALWAYS">
+                                        <padding>
+                                            <Insets bottom="15" left="15" right="15" top="15" />
+                                        </padding>
+                                        <Label text="Nota: Puedes hacer scroll para hacer zoom y arrastrar para mover la gráfica." styleClass="subtitle" />
+                                        <LineChart fx:id="interpolationChart" title="Polinomio de Interpolación" animated="false" VBox.vgrow="ALWAYS">
+                                            <xAxis>
+                                                <NumberAxis fx:id="xAxis" label="x" autoRanging="false" lowerBound="-10" upperBound="10" />
+                                            </xAxis>
+                                            <yAxis>
+                                                <NumberAxis fx:id="yAxis" label="f(x)" autoRanging="false" lowerBound="-10" upperBound="10" />
+                                            </yAxis>
+                                        </LineChart>
+                                    </VBox>
+                                </Tab>
+                            </tabs>
+                        </TabPane>
+                    </center>
+
+                    <bottom>
+                        <VBox spacing="5" styleClass="footer">
+                            <padding>
+                                <Insets bottom="10" left="15" right="15" top="10" />
+                            </padding>
+                            <Label styleClass="footer-text" text="© 2026 - Métodos Numéricos - Diferencias Divididas de Newton" />
                         </VBox>
-                    </HBox>
-                </Tab>
-                <Tab text="Gráfica">
-                    <VBox spacing="10" VBox.vgrow="ALWAYS">
-                        <padding>
-                            <Insets bottom="15" left="15" right="15" top="15" />
-                        </padding>
-                        <Label text="Nota: Puedes hacer scroll para hacer zoom y arrastrar para mover la gráfica." styleClass="subtitle" />
-                        <LineChart fx:id="interpolationChart" title="Polinomio de Interpolación" animated="false" VBox.vgrow="ALWAYS">
-                            <xAxis>
-                                <NumberAxis fx:id="xAxis" label="x" autoRanging="false" lowerBound="-10" upperBound="10" />
-                            </xAxis>
-                            <yAxis>
-                                <NumberAxis fx:id="yAxis" label="f(x)" autoRanging="false" lowerBound="-10" upperBound="10" />
-                            </yAxis>
-                        </LineChart>
-                    </VBox>
-                </Tab>
-            </tabs>
-        </TabPane>
-    </center>
+                    </bottom>
+                </BorderPane>
 
-    <bottom>
-        <VBox spacing="5" styleClass="footer">
-            <padding>
-                <Insets bottom="10" left="15" right="15" top="10" />
-            </padding>
-            <Label styleClass="footer-text" text="© 2026 - Métodos Numéricos - Diferencias Divididas de Newton" />
+            </StackPane>
+        </content>
+    </ScrollPane>
+
+    <AnchorPane pickOnBounds="false">
+        <VBox AnchorPane.bottomAnchor="30" AnchorPane.rightAnchor="30" spacing="20" alignment="CENTER" styleClass="floating-control-area" pickOnBounds="false">
+            <GridPane styleClass="joy-panel" hgap="4" vgap="4" alignment="CENTER">
+                <Button text="▲" onMousePressed="#startMoveUp" onMouseReleased="#onReleased" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="joy-button"/>
+                <Button text="◀" onMousePressed="#startMoveLeft" onMouseReleased="#onReleased" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="joy-button"/>
+                <Button text="●" onAction="#onResetZoom" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="zoom-reset-small"/>
+                <Button text="▶" onMousePressed="#startMoveRight" onMouseReleased="#onReleased" GridPane.columnIndex="2" GridPane.rowIndex="1" styleClass="joy-button"/>
+                <Button text="▼" onMousePressed="#startMoveDown" onMouseReleased="#onReleased" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="joy-button"/>
+            </GridPane>
+            <VBox styleClass="zoom-panel-vertical" alignment="CENTER" spacing="8">
+                <Button text="+" onMousePressed="#startZoomIn" onMouseReleased="#onReleased" styleClass="zoom-control-round"/>
+                <Button text="-" onMousePressed="#startZoomOut" onMouseReleased="#onReleased" styleClass="zoom-control-round"/>
+            </VBox>
         </VBox>
-    </bottom>
-</BorderPane>
+    </AnchorPane>
+
+</StackPane>
