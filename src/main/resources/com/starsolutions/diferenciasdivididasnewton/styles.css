@@ -305,12 +305,7 @@
     -fx-background-color: #2c3e50;
 }
 
-/* ==================== Focus Visible ==================== */
-*:focus {
-    -fx-border-color: #0078d4;
-}
 
-/* ==================== PANEL DE CONTROL FLOTANTE (HUD) ==================== */
 
 .floating-control-area {
     -fx-opacity: 0.3;
